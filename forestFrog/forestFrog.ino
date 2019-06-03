@@ -12,6 +12,8 @@ uint32_t DemoCounter=0;
 #define NUM_LEDS 10
 #define DATA_PIN 15
 CRGB leds[NUM_LEDS];
+#define FRAMES_PER_SECOND  60
+uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 
 int period[2] = {500, 500};
 unsigned long time_now[2] = {0, 0};
@@ -34,8 +36,6 @@ void setup()
 
   //==== FastLED stuff
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  
-  
   FastLED.addLeds<LED_TYPE, 21, RGB>(ledsDirect, sizeof(ledsDirect)/sizeof(CRGB)).setCorrection(TypicalLEDStrip);
   pinMode(21, INPUT); //we're not using this pin so we don't need it toggling.
 
@@ -62,52 +62,19 @@ void loop() {
   DacAudio.FillBuffer();              // Fill the sound buffer with data
   Serial.println(DemoCounter++);      // Showing that the sound will play as well as your code running here.
 
-  //==== FastLED stuff
-  if(millis() > time_now[0] + period[0])
+  //==== light control stuff
+  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  fill_rainbow( ledsDirect, 2, gHue, 7);
+
+  FastLED.show();
+
+  //show direct PWM output
+  char* ledsDirectPtr = (char*)ledsDirect; //get pointer to RGB array.
+  for(int i = 0; i<sizeof(ledsDirect); i++)
   {
-    time_now[0] = millis();
-    
-    // Move a single white led 
-    for(int whiteLed = 0; whiteLed < NUM_LEDS; whiteLed++) 
-    {
-      if(toggle)
-      {
-        // Turn our current led on to white, then show the leds
-        leds[whiteLed] = CRGB::White;
-      }
-      else
-      {
-        // Turn our current led back to black for the next loop around
-        leds[whiteLed] = CRGB::Black;
-      }
-      
-      // Show the leds (only one of which is set to white, from above)
-      FastLED.show();
-    }
-    
-    toggle ^= 1; //toggle the state.
-    
+    ledcWrite(i, ledsDirectPtr[i]); //red, green, blue in turn.
   }
 
-  //==== Direct PWM stuff 
-  if(millis() > time_now[1] + period[1])
-  {
-    time_now[1] = millis();
-
-    if(toggle)
-    {
-      ledsDirect[0] = CRGB::White;
-    }
-    else
-    {
-      ledsDirect[0] = CRGB::Black;
-    }
-
-    //show direct PWM output
-    char* ledsDirectPtr = (char*)ledsDirect; //get pointer to RGB array.
-    for(int i = 0; i<sizeof(ledsDirect); i++)
-    {
-      ledcWrite(i, ledsDirectPtr[i]); //red, green, blue in turn.
-    }
-  }
+  FastLED.delay(1000/FRAMES_PER_SECOND); 
+  EVERY_N_MILLISECONDS( 20 ) { gHue++; }
 }
