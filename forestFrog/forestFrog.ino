@@ -1,8 +1,8 @@
 // ==== XTC DAC sound stuff
-#include "SoundData.h";
+#include "CROAK.h";
 #include "XT_DAC_Audio.h";
 XT_DAC_Audio_Class DacAudio(25,0); // Use GPIO 25, one of the 2 DAC pins and timer 0
-XT_Wav_Class StarWars(StarWarsWav);
+XT_Wav_Class CROAK(CROAKWav);
 uint32_t DemoCounter=0;
 
 // ==== FastLED stuff
@@ -29,10 +29,7 @@ int currentLed;
 
 void setup() 
 {
-  //==== XTC DAC sound stuff
   Serial.begin(115200);
-  StarWars.RepeatForever=true; // Keep on playing sample forever!!!
-  DacAudio.Play(&StarWars); // Set to play
 
   //==== FastLED stuff
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -55,12 +52,20 @@ void setup()
     digitalWrite(motorPins[i], 0);
     pinMode(motorPins[i], OUTPUT);
   }
+
+  digitalWrite(motorPins[0], 1);
 }
 
+void loop() 
+{
+  //==== XTC DAC sound stuff
+  DacAudio.FillBuffer();
 
-void loop() {
-  DacAudio.FillBuffer();              // Fill the sound buffer with data
-  Serial.println(DemoCounter++);      // Showing that the sound will play as well as your code running here.
+  if(CROAK.Playing == false)
+  {
+    CROAK.Speed = random(50, 125) / 100.0;
+    DacAudio.Play(&CROAK);
+  }
 
   //==== light control stuff
   fill_rainbow( leds, NUM_LEDS, gHue, 7);
