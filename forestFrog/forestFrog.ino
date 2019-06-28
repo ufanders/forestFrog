@@ -41,10 +41,10 @@ bool button2Down = false;
 bool button3Down = false;
 bool button4Down = false;
 
-Debounce Button1(buttonPins[0]); // Button1 debounced, default 50ms delay.
-Debounce Button2(buttonPins[1]); // Button2 debounced, default 50ms delay.
-Debounce Button3(buttonPins[2]); // Button1 debounced, default 50ms delay.
-Debounce Button4(buttonPins[3]); // Button2 debounced, default 50ms delay.
+Debounce Button1(buttonPins[0], 100); // Button1 debounced, default 50ms delay.
+Debounce Button2(buttonPins[1], 100); // Button2 debounced, default 50ms delay.
+Debounce Button3(buttonPins[2], 100); // Button1 debounced, default 50ms delay.
+Debounce Button4(buttonPins[3], 100); // Button2 debounced, default 50ms delay.
 
 //color stuff
 byte coolingValue;
@@ -60,6 +60,7 @@ CRGBPalette16* gPalCurrent;
 // control stuff
 byte colorMode = 0;
 bool gReverseDirection = false;
+bool motorToggle = false;
 
 void setup() 
 {
@@ -91,9 +92,6 @@ void setup()
     digitalWrite(motorPins[i], 0);
     pinMode(motorPins[i], OUTPUT);
   }
-
-  digitalWrite(motorPins[0], 1);
-  digitalWrite(motorPins[1], 1);
 
   //button pins as GPIO
   for(i=0; i<(sizeof(buttonPins)/sizeof(const int)); i++)
@@ -146,14 +144,15 @@ void loop()
   fill_rainbow( leds2, NUM_LEDS, gHue, 7);
   fill_rainbow( leds3, NUM_LEDS, gHue, 7);
   fill_rainbow( leds4, NUM_LEDS, gHue, 7);
-  fill_rainbow( ledsDirect, 2, gHue, 7);
   */
+  fill_rainbow( ledsDirect, 2, gHue, 7);
+ 
 
   //TODO: read pin states.
-  if(!Button4.read() && button3Down == false)
+  if(!Button4.read() && button4Down == false)
   {
     //LED mode button pushed.
-    button3Down = true;
+    button4Down = true;
     
     colorMode++;
     if(colorMode > 3) colorMode = 0;
@@ -191,11 +190,23 @@ void loop()
     }
   }
 
+  if(Button4.read())
+  {
+    button4Down = false;
+  }
+
+  if(!Button3.read() && button3Down == false) //CHANGE EYES
+  {
+    motorToggle ^= 1;
+    
+    digitalWrite(motorPins[0], motorToggle);
+    digitalWrite(motorPins[1], motorToggle);
+  }
+
   if(Button3.read())
   {
     button3Down = false;
   }
-
 
   //TODO: draw video frame.
   random16_add_entropy( random8());
